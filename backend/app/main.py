@@ -8,7 +8,7 @@ from .api import app as api_router
 app = FastAPI(title="Movie Recommendation System")
 
 # Gắn router từ api.py
-app.mount("/", api_router)
+# app.mount("/", api_router)
 
 # Thêm các route bổ sung nếu cần
 @app.post("/movies/", response_model=schemas.MovieResponse)
@@ -23,3 +23,4 @@ def create_genre(genre: schemas.GenreCreate, db: Session = Depends(get_db)):
 @app.post("/movie-genres/")
 def create_movie_genre(movie_id: int, genre_id: int, db: Session = Depends(get_db)):
     return crud.create_movie_genre(db=db, movie_id=movie_id, genre_id=genre_id)
+app.mount("/", api_router)

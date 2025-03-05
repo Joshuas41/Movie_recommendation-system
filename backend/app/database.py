@@ -16,17 +16,3 @@ def get_db():
     finally:
         db.close()
         
-from backend.app.database import SessionLocal
-from backend.app.models import Movie
-
-def check_movies():
-    db = SessionLocal()
-    try:
-        movies = db.query(Movie).all()
-        print(f"Số lượng phim: {len(movies)}")
-    except Exception as e:
-        print(f"Lỗi truy vấn: {e}")
-    finally:
-        db.close()
-
-check_movies()

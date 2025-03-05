@@ -5,6 +5,8 @@ from .models import Movie, Genre
 from .schemas import MovieResponse, GenreResponse
 from .recommendations import RecommendationEngine
 from .database import get_db
+from sqlalchemy.sql import extract
+
 
 app = FastAPI(title="Movie Recommendation System")
 
@@ -26,7 +28,7 @@ def get_movies(
         query = query.filter(Movie.vote_average >= min_rating)
     
     if year:
-        query = query.filter(Movie.release_date.year == year)
+        query = query.filter(extract('year', Movie.release_date) == year)
 
     total = query.count()
     movies = (
