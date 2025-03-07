@@ -21,18 +21,26 @@ API_BASE_URL = "http://localhost:8000"
 def fetch_movies(params=None):
     try:
         response = requests.get(f"{API_BASE_URL}/movies", params=params)
-        return response.json()
+        data = response.json()
+        if isinstance(data, list):
+            return data
+        else:
+            st.error(f"Định dạng dữ liệu không hợp lệ: {data}")
+            return []
     except Exception as e:
         st.error(f"Lỗi kết nối: {e}")
         return []
 
 def main_exploration():
     st.subheader("🌟 Khám Phá Phim")
-    
+    # Debug: Kiểm tra dữ liệu API
+    with st.expander("Debug API Data"):
+        raw_data = fetch_movies()
+        st.json(raw_data)
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        genre = st.selectbox("Thể Loại", ["Tất Cả", "Action", "Comedy", "Drama"])
+        genre = st.selectbox("Thể Loại", ["Tất Cả", "Action", "Comedy", "Drama", "Thriller", "Adventure"])
     
     with col2:
         min_rating = st.slider("Điểm Tối Thiểu", 0.0, 10.0, 7.0)
@@ -40,27 +48,42 @@ def main_exploration():
     with col3:
         year = st.number_input("Năm", 2000, 2024, 2020)
     
-    params = {
-        "genre": genre if genre != "Tất Cả" else None,
-        "min_rating": min_rating,
-        "year": year
-    }
+    params = {}
+    if genre != "Tất Cả":
+        params["genre"] = genre
+    if min_rating > 0:
+        params["min_rating"] = min_rating
+    if year:
+        params["year"] = year
     
     movies = fetch_movies(params)
+    
+    if not movies:
+        st.warning("Không tìm thấy phim nào phù hợp với bộ lọc. Vui lòng thử lại với bộ lọc khác.")
     
     for movie in movies:
         col1, col2 = st.columns([1, 4])
         
         with col1:
-            poster_url = f"https://image.tmdb.org/t/p/w200{movie.get('poster_path')}"
-            st.image(poster_url if movie.get('poster_path') else "https://via.placeholder.com/200x300", width=150)
+            if movie.get('poster_path'):
+                poster_url = f"https://image.tmdb.org/t/p/w200{movie.get('poster_path')}"
+                try:
+                    st.image(poster_url, width=150)
+                except:
+                    st.image("https://via.placeholder.com/150x225?text=No+Poster", width=150)
+            else:
+                st.image("https://via.placeholder.com/150x225?text=No+Poster", width=150)
         
         with col2:
-            st.write(f"**{movie['title']}** (Điểm: {movie['vote_average']})")
-            st.write(movie['overview'])
+            st.write(f"**{movie['title']}** (Điểm: {movie.get('vote_average', 'N/A')})")
+            st.write(movie.get('overview', 'Không có mô tả'))
+            
+            # Hiển thị thể loại
+            if movie.get('genres'):
+                genres_text = ", ".join([g['name'] for g in movie['genres']])
+                st.write(f"**Thể loại:** {genres_text}")
         
         st.markdown("---")
-
 def recommendation_by_movie():
     st.subheader("🎯 Gợi Ý Theo Phim")
     movie_id = st.number_input("Nhập ID Phim", min_value=1)

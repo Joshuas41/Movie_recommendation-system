@@ -11,9 +11,8 @@ class Movie(Base):
     overview = Column(String)
     vote_average = Column(Float)
     release_date = Column(Date)
-    poster_path = Column(String, nullable=True)  # Thêm trường này
+    poster_path = Column(String, nullable=True)
     genres = relationship("MovieGenre", back_populates="movie")
-    
 class Genre(Base):
     __tablename__ = "genres"
     id = Column(Integer, primary_key=True)
