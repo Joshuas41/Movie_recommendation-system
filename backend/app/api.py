@@ -113,3 +113,22 @@ def debug_filter_check(
         "min_rating": min_rating,
         "year": year
     }
+@app.get("/debug/movie/{movie_id}")
+def debug_movie(movie_id: int, db: Session = Depends(get_db)):
+    movie = db.query(Movie).filter(Movie.id == movie_id).first()
+    if not movie:
+        return {"error": f"Movie with ID {movie_id} not found"}
+    
+    movie_genres = db.query(MovieGenre).filter(MovieGenre.movie_id == movie_id).all()
+    genre_ids = [mg.genre_id for mg in movie_genres]
+    genres = db.query(Genre).filter(Genre.id.in_(genre_ids)).all() if genre_ids else []
+    
+    return {
+        "movie": {
+            "id": movie.id,
+            "title": movie.title,
+            "vote_average": movie.vote_average
+        },
+        "genres": [{"id": g.id, "name": g.name} for g in genres],
+        "genre_count": len(genres)
+    }

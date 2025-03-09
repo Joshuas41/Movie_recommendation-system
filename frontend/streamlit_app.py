@@ -86,27 +86,67 @@ def main_exploration():
         st.markdown("---")
 def recommendation_by_movie():
     st.subheader("🎯 Gợi Ý Theo Phim")
+    
+    # Hiển thị một số phim có sẵn để người dùng chọn
+    try:
+        # Lấy 10 phim đầu tiên để gợi ý
+        response = requests.get(f"{API_BASE_URL}/movies?page=1&page_size=10")
+        available_movies = response.json()
+        
+        if available_movies:
+            st.info("Gợi ý một số phim có sẵn trong hệ thống:")
+            for movie in available_movies[:5]:  # Chỉ hiển thị 5 phim
+                st.write(f"- ID: {movie['id']} - {movie['title']}")
+    except Exception as e:
+        st.warning(f"Không thể lấy danh sách phim gợi ý: {e}")
+    
     movie_id = st.number_input("Nhập ID Phim", min_value=1)
     
     if st.button("Xem Gợi Ý"):
-        try:
-            response = requests.get(f"{API_BASE_URL}/recommendations/movie/{movie_id}")
-            recommendations = response.json()
-            
-            for movie in recommendations:
-                col1, col2 = st.columns([1, 4])
+        with st.spinner("Đang tìm phim tương tự..."):
+            try:
+                # Thêm debug info
+                st.info(f"Đang gọi API: {API_BASE_URL}/recommendations/movie/{movie_id}")
                 
-                with col1:
-                    poster_url = f"https://image.tmdb.org/t/p/w200{movie.get('poster_path')}"
-                    st.image(poster_url if movie.get('poster_path') else "https://via.placeholder.com/200x300", width=150)
+                response = requests.get(f"{API_BASE_URL}/recommendations/movie/{movie_id}")
                 
-                with col2:
-                    st.write(f"**{movie['title']}** (Điểm: {movie['vote_average']})")
-                    st.write(movie['overview'])
+                # Hiển thị thông tin response
+                st.write("Status code:", response.status_code)
                 
-                st.markdown("---")
-        except Exception as e:
-            st.error(f"Lỗi: {e}")
+                if response.status_code != 200:
+                    st.error(f"API trả về lỗi: {response.text}")
+                    return
+                
+                recommendations = response.json()
+                
+                if not recommendations:
+                    st.warning("Không tìm thấy phim tương tự. Có thể do phim này không có thể loại hoặc không có phim tương tự trong hệ thống.")
+                    return
+                
+                st.success(f"Tìm thấy {len(recommendations)} phim tương tự!")
+                
+                for movie in recommendations:
+                    col1, col2 = st.columns([1, 4])
+                    
+                    with col1:
+                        if movie.get('poster_path'):
+                            poster_url = f"https://image.tmdb.org/t/p/w200{movie.get('poster_path')}"
+                            try:
+                                st.image(poster_url, width=150)
+                            except:
+                                st.image("https://via.placeholder.com/150x225?text=No+Poster", width=150)
+                        else:
+                            st.image("https://via.placeholder.com/150x225?text=No+Poster", width=150)
+                    
+                    with col2:
+                        st.write(f"**{movie['title']}** (Điểm: {movie.get('vote_average', 'N/A')})")
+                        st.write(movie.get('overview', 'Không có mô tả'))
+                    
+                    st.markdown("---")
+            except Exception as e:
+                st.error(f"Lỗi khi gọi API: {str(e)}")
+                import traceback
+                st.code(traceback.format_exc())
 
 def main():
     if feature == "Khám Phá Phim":
