@@ -148,11 +148,74 @@ def recommendation_by_movie():
                 import traceback
                 st.code(traceback.format_exc())
 
+def recommendation_by_genre():
+    st.subheader("🎭 Gợi Ý Theo Thể Loại")
+    
+    # Lấy danh sách thể loại từ API hoặc hardcode
+    genres = ["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", 
+              "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery",
+              "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"]
+    
+    selected_genre = st.selectbox("Chọn Thể Loại", genres)
+    
+    if st.button("Xem Gợi Ý"):
+        with st.spinner(f"Đang tìm phim thể loại {selected_genre}..."):
+            try:
+                # Debug info
+                st.info(f"Đang gọi API: {API_BASE_URL}/recommendations/genre/{selected_genre}")
+                
+                response = requests.get(f"{API_BASE_URL}/recommendations/genre/{selected_genre}")
+                
+                # Hiển thị thông tin response
+                st.write("Status code:", response.status_code)
+                
+                if response.status_code != 200:
+                    st.error(f"API trả về lỗi: {response.text}")
+                    return
+                
+                recommendations = response.json()
+                
+                if not recommendations:
+                    st.warning(f"Không tìm thấy phim thể loại {selected_genre} trong hệ thống.")
+                    return
+                
+                st.success(f"Tìm thấy {len(recommendations)} phim thể loại {selected_genre}!")
+                
+                for movie in recommendations:
+                    col1, col2 = st.columns([1, 4])
+                    
+                    with col1:
+                        if movie.get('poster_path'):
+                            poster_url = f"https://image.tmdb.org/t/p/w200{movie.get('poster_path')}"
+                            try:
+                                st.image(poster_url, width=150)
+                            except:
+                                st.image("https://via.placeholder.com/150x225?text=No+Poster", width=150)
+                        else:
+                            st.image("https://via.placeholder.com/150x225?text=No+Poster", width=150)
+                    
+                    with col2:
+                        st.write(f"**{movie['title']}** (Điểm: {movie.get('vote_average', 'N/A')})")
+                        st.write(movie.get('overview', 'Không có mô tả'))
+                    
+                    st.markdown("---")
+            except Exception as e:
+                st.error(f"Lỗi khi gọi API: {str(e)}")
+                import traceback
+                st.code(traceback.format_exc())
+
+def show_statistics():
+    st.subheader("📊 Thống Kê Phim")
+    st.info("Tính năng này đang được phát triển.")
+
 def main():
     if feature == "Khám Phá Phim":
         main_exploration()
     elif feature == "Gợi Ý Theo Phim":
         recommendation_by_movie()
-
+    elif feature == "Gợi Ý Theo Thể Loại":
+        recommendation_by_genre()
+    elif feature == "Thống Kê":
+        show_statistics()
 if __name__ == "__main__":
     main()
